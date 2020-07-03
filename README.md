@@ -22,5 +22,5 @@ Creates three files:
 | -at, --access_token |  [OPTIONAL] Twitter Accesss Token |
 | -as, --access_secret |  [OPTIONAL] Twitter Accesss Secret |
 
-Access Token and Access Secret are necessary to run application with an authorized twitter account and callback action  
+Access Token and Access Secret are necessary to run application without an authorized twitter account and callback action  
 Optional parameters or .env file is necessary to run. Either one of them is enough 
