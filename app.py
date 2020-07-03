@@ -17,6 +17,7 @@ parser = argparse.ArgumentParser(
     epilog="Example of usage:\npython profile.py github\n"
     )
 parser.add_argument("screen_name", metavar="screen_name", help="[REQUIRED] Screen name without @ of the user")
+parser.add_argument("count", metavar="count", nargs="?", help="[OPTIONAL] Total amout of tweets to get from user timeline, default: 20", default=20)
 parser.add_argument("-k", "--key", metavar="key", nargs="?", help="Twitter API Key")
 parser.add_argument("-s", "--secret", metavar="secret", nargs="?", help="Twitter API Secret")
 parser.add_argument("-at", "--access_token", metavar="atoken", nargs="?", help="Twitter API Access Token")
@@ -56,8 +57,9 @@ friends_l = [user._json for user in friends]
 
 # Get User Timeline
 
-user_timeline = api.user_timeline(name)
+user_timeline = api.user_timeline(name, count = args.count)
 tweets_l = [status._json for status in user_timeline]
+print(len(tweets_l))
 
 # Write Followers/Friends
 
