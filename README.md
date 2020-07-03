@@ -21,13 +21,13 @@ pip install -r requirements.txt
 
 To run application
 ```python
-python app.py <screen name>
+python app.py |screen name|
 ```
 
 Creates three files:
->followers_<screen name>.json: Followers of given user  
->friends_<screen name>.json: Friends ( people who given user follows) of given user  
->timeline_<screen name>.json: Tweets of given user
+>followers_|screen name|.json: Followers of given user  
+>friends_|screen name|.json: Friends ( people who given user follows) of given user  
+>timeline_|screen name|.json: Tweets of given user
 
 | Parameters   |      Description      |
 |----------|:-------------:|
