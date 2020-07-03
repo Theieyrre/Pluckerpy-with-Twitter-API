@@ -4,7 +4,7 @@ Pluckerpy implementation with Twitter API credentials
 Without API credentials: https://github.com/Theieyrre/Pluckerpy
 
 ## Requirements
-> Python 3 ( 3.8.3)\
+> Python 3 ( 3.8.3)
 
 ## Install
 
