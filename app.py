@@ -1,5 +1,5 @@
 import argparse
-from os import path
+import os
 import sys
 import json
 
@@ -22,6 +22,9 @@ parser.add_argument("-k", "--key", metavar="key", nargs="?", help="Twitter API K
 parser.add_argument("-s", "--secret", metavar="secret", nargs="?", help="Twitter API Secret")
 parser.add_argument("-at", "--access_token", metavar="atoken", nargs="?", help="Twitter API Access Token")
 parser.add_argument("-as", "--access_secret", metavar="asecret", nargs="?", help="Twitter API Access Token Secret")
+parser.add_argument("-d", "--dir", metavar="dir", nargs="?", help="Directory name to write outputs to", default='output')
+parser.add_argument("--csv", action='store_true', help="Format output in csv file")
+parser.add_argument("-v", "--verbose", action='store_true', help="Extra prints")
 args = parser.parse_args()
 
 if args.key is not None and args.secret is not None and args.atoken is not None and args.asecret is not None:
@@ -30,7 +33,7 @@ if args.key is not None and args.secret is not None and args.atoken is not None 
     api_access_token = args.atoken
     api_access_secret = args.asecret
 elif args.key is None and args.secret is None:
-    if path.exists('.env'):
+    if os.path.exists('.env'):
         api_key = config('KEY')
         api_secret = config('SECRET')
         api_access_token = config('ACCESS_TOKEN')
@@ -40,34 +43,96 @@ elif args.key is None and args.secret is None:
 else:
     sys.exit(colored("Either both parameters or .env file found!","red"))
 
+if args.csv:
+    import pandas as pd
+
 # Auth with tweepy
 
 auth = tweepy.OAuthHandler(api_key, api_secret)
 auth.set_access_token(api_access_token, api_access_token_secret)
-api = tweepy.API(auth)
+api = tweepy.API(auth, wait_on_rate_limit=True)
+
+# Get profile data
+
+name = args.screen_name
+user_l = {}
+
+user = api.get_user(name)._json
+
+user_l["name"] = user["name"]
+user_l["screen_name"] = user["screen_name"]
+user_l["location"] = user["location"]
+user_l["is_locked_account"] = user["protected"]
+user_l["created_at"] = user["created_at"]
+user_l["is_verified"] = user["verified"]
+user_l["language"] = user["lang"]
+max_tweet = user["statuses_count"]
+
+count = max_tweet if args.count == '-1' else args.count
 
 # Get Followers/Friends
 
-name = args.screen_name
-followers = api.followers(name)
-friends = api.friends(name)
+followers_l = []
+friends_l = []
 
-followers_l = [user._json for user in followers]
-friends_l = [user._json for user in friends]
+for follower in tweepy.Cursor(api.followers, id=name).items():
+    f = {}
+    f["name"] = follower._json["name"]
+    f["screen_name"] = follower._json["screen_name"]
+    f["location"] = follower._json["location"]
+    f["description"] = follower._json["description"]
+    f["is_locked"] = follower._json["protected"]
+    f["created_at"] = follower._json["created_at"]
+    f["is_verified"] = follower._json["verified"]
+    f["language"] = follower._json["lang"]
+    followers_l.append(f)
+
+for friend in tweepy.Cursor(api.friends, id=name).items():
+    f = {}
+    f["name"] = follower._json["name"]
+    f["screen_name"] = follower._json["screen_name"]
+    f["location"] = follower._json["location"]
+    f["description"] = follower._json["description"]
+    f["is_locked"] = follower._json["protected"]
+    f["created_at"] = follower._json["created_at"]
+    f["is_verified"] = follower._json["verified"]
+    f["language"] = follower._json["lang"]
+    friends_l.append(f)
 
 # Get User Timeline
 
-user_timeline = api.user_timeline(name, count = args.count)
-tweets_l = [status._json for status in user_timeline]
-print(len(tweets_l))
+tweets_l = []
+for status in tweepy.Cursor(api.user_timeline, id=name, count = count).items():
+    tweets_l.append(status._json)
+
+if args.verbose:
+    print("Total number of followers collected: " + colored(len(followers_l), "yellow"))
+    print("Total number of friends collected: " + colored(len(friends_l), "yellow"))
+    print("Total number of tweets collected: " + colored(len(tweets_l), "yellow"))
 
 # Write Followers/Friends
 
-with open('followers_' + name + '.json', 'w') as followersjson:
-    json.dump(followers_l, followersjson, indent=4)
+if not os.path.exists(args.dir):
+    os.makedirs(args.dir)
 
-with open('friends_' + name+ '.json', 'w') as friendsjson:
-    json.dump(friends_l, friendsjson, indent=4)
+if not args.csv:
+    with open(args.dir + '/followers_' + name + '.json', 'w') as followersjson:
+        json.dump(followers_l, followersjson, indent=4)
 
-with open('timeline_' + name+ '.json', 'w') as timelinejson:
-    json.dump(tweets_l, timelinejson, indent=4)
+    with open(args.dir + '/friends_' + name+ '.json', 'w') as friendsjson:
+        json.dump(friends_l, friendsjson, indent=4)
+
+    with open(args.dir + '/timeline_' + name+ '.json', 'w') as timelinejson:
+        json.dump(tweets_l, timelinejson, indent=4)
+else:
+    df_followers = pd.DataFrame()
+    df_friends = pd.DataFrame()
+    for i in range(len(followers_l)):
+        list_to_append = user_l + followers_l[i]
+        df_follower.append(list_to_append)
+    for i in range(len(friends_l)):
+        list_to_append = user_l + friends_l[i]
+        df_follower.append(list_to_append)
+    
+    df_followers.to_csv(args.dir + '/followers_' + name+ '.csv')
+    df_friends.to_csv(args.dir + '/friends_' + name+ '.csv')
