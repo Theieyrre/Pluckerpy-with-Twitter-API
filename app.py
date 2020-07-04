@@ -1,7 +1,4 @@
-import argparse
-import os
-import sys
-import json
+import argparse, os, sys, json
 
 import tweepy
 from decouple import config
@@ -12,7 +9,7 @@ init()
 # Parse arguments
 
 parser = argparse.ArgumentParser(
-    description="Get profile and tweets of a Twitter user\nTwitter API key and secret can be given as\n\t1) .env file with \n\t\tKEY=<twitter_key>\n\t\tSECRET=<twitter_secret>\n\t\tACCESS_TOKEN=<access_token>\n\t\tACCESS_SECRET=<access_secret>\n\t2) commandline argument wiht --key and --secret", 
+    description="Get profile and tweets of a Twitter user\nTwitter API key and secret can be given as\n\t1) .env file with \n\t\tKEY=<twitter_key>\n\t\tSECRET=<twitter_secret>\n\t\tACCESS_TOKEN=<access_token>\n\t\tACCESS_SECRET=<access_secret>\n\t2) commandline argument with --key and --secret", 
     formatter_class=argparse.RawTextHelpFormatter, 
     epilog="Example of usage:\npython profile.py github\n"
     )
@@ -57,24 +54,29 @@ api = tweepy.API(auth, wait_on_rate_limit=True)
 name = args.screen_name
 user_l = {}
 
+if args.verbose:
+    print("Getting user data...", end='\r')
 user = api.get_user(name)._json
 
-user_l["name"] = user["name"]
-user_l["screen_name"] = user["screen_name"]
-user_l["location"] = user["location"]
-user_l["is_locked_account"] = user["protected"]
-user_l["created_at"] = user["created_at"]
-user_l["is_verified"] = user["verified"]
-user_l["language"] = user["lang"]
+user_l["main_name"] = name
+user_l["main_screen_name"] = user["screen_name"]
+user_l["main_location"] = user["location"]
+user_l["main_is_locked_account"] = user["protected"]
+user_l["main_created_at"] = user["created_at"]
+user_l["main_is_verified"] = user["verified"]
+user_l["main_language"] = user["lang"]
 max_tweet = user["statuses_count"]
 
 count = max_tweet if args.count == '-1' else args.count
-
+if args.verbose:
+    print("Getting user data..." + colored("Done", "green"))
 # Get Followers/Friends
 
 followers_l = []
 friends_l = []
 
+if args.verbose:
+    print("Getting Followers...", end='\r')
 for follower in tweepy.Cursor(api.followers, id=name).items():
     f = {}
     f["name"] = follower._json["name"]
@@ -86,26 +88,42 @@ for follower in tweepy.Cursor(api.followers, id=name).items():
     f["is_verified"] = follower._json["verified"]
     f["language"] = follower._json["lang"]
     followers_l.append(f)
-
+    if args.verbose:
+        print("Current follower count: " + colored(len(followers_l),"yellow"), end='\r')
+if args.verbose:
+    print()
+    print("Getting user data..." + colored("Done", "green"))
+    print("Getting Friends...", end='\r')
 for friend in tweepy.Cursor(api.friends, id=name).items():
     f = {}
-    f["name"] = follower._json["name"]
-    f["screen_name"] = follower._json["screen_name"]
-    f["location"] = follower._json["location"]
-    f["description"] = follower._json["description"]
-    f["is_locked"] = follower._json["protected"]
-    f["created_at"] = follower._json["created_at"]
-    f["is_verified"] = follower._json["verified"]
-    f["language"] = follower._json["lang"]
+    f["name"] = friend._json["name"]
+    f["screen_name"] = friend._json["screen_name"]
+    f["location"] = friend._json["location"]
+    f["description"] = friend._json["description"]
+    f["is_locked"] = friend._json["protected"]
+    f["created_at"] = friend._json["created_at"]
+    f["is_verified"] = friend._json["verified"]
+    f["language"] = friend._json["lang"]
     friends_l.append(f)
+    if args.verbose:
+        print("Current friend count: " + colored(len(friends_l),"yellow"), end='\r')
+if args.verbose:
+    print()
+    print("Getting Friends..." + colored("Done", "green"))
 
 # Get User Timeline
 
+if args.verbose:
+    print("Getting user timeline...", end='\r')
 tweets_l = []
 for status in tweepy.Cursor(api.user_timeline, id=name, count = count).items():
     tweets_l.append(status._json)
+    if args.verbose:
+        print("Current tweet count: " + colored(len(tweets_l),"yellow"), end='\r')
 
 if args.verbose:
+    print()
+    print("Getting user timeline..." + colored("Done", "green"))
     print("Total number of followers collected: " + colored(len(followers_l), "yellow"))
     print("Total number of friends collected: " + colored(len(friends_l), "yellow"))
     print("Total number of tweets collected: " + colored(len(tweets_l), "yellow"))
@@ -128,11 +146,17 @@ else:
     df_followers = pd.DataFrame()
     df_friends = pd.DataFrame()
     for i in range(len(followers_l)):
-        list_to_append = user_l + followers_l[i]
-        df_follower.append(list_to_append)
+        dict_to_append = dict(**user_l, **followers_l[i])
+        df_followers = df_followers.append(dict_to_append, ignore_index=True)
     for i in range(len(friends_l)):
-        list_to_append = user_l + friends_l[i]
-        df_follower.append(list_to_append)
+        dict_to_append = dict(**user_l, **friends_l[i])
+        df_friends = df_friends.append(dict_to_append, ignore_index=True)
     
+    if args.verbose:
+        print("Followers DataFrame")
+        print(df_followers.head(5))
+        print("Friends DataFrame")
+        print(df_friends.head(5))
+
     df_followers.to_csv(args.dir + '/followers_' + name+ '.csv')
     df_friends.to_csv(args.dir + '/friends_' + name+ '.csv')

@@ -39,6 +39,7 @@ Creates three files:
 | -as, --access_secret |  [OPTIONAL] Twitter Accesss Secret |
 | -d, --dir |  [OPTIONAL] Directory name to write outputs to, default: output|
 | -v, --verbose |  Extra prints |
+| --csv |  [OPTIONAL] Print in csv format |
 
 Access Token and Access Secret are necessary to run application with an authorized twitter account and callback action  
 Optional parameters or .env file is necessary to run. Either one of them is enough 

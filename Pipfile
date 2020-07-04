@@ -11,6 +11,7 @@ termcolor = "*"
 colorama = "*"
 python-decouple = "*"
 pandas = "*"
+tqdm = "*"
 
 [requires]
 python_version = "3.8"
