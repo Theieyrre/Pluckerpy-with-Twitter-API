@@ -120,9 +120,9 @@ for status in tweepy.Cursor(api.user_timeline, id=name, count = count).items():
     t = {}
     t["created_at"] = status._json["created_at"]
     t["text"] = status._json["text"]
-    t["hashtags"] = ",".join([ h.text for h in status._json["entities"]["hashtags"]])
+    t["hashtags"] = ",".join([ h["text"] for h in status._json["entities"]["hashtags"]])
     t["symbols"] = status._json["entities"]["symbols"]
-    t["urls"] = status._json["entities"]["urls"]
+    t["urls"] = ",".join([u["url"] for u in status._json["entities"]["urls"]])
     t["is_retweet"] = status._json["retweeted"]
     t["language"] = status._json["lang"]
     t["name"] = status._json["user"]["name"]
@@ -167,7 +167,7 @@ else:
         df_friends = df_friends.append(dict_to_append, ignore_index=True)
     for i in range(len(tweets_l)):
         dict_to_append = dict(**user_l, **tweets_l[i])
-        df_tweets = df_friends.append(dict_to_append, ignore_index=True)
+        df_tweets = df_tweets.append(dict_to_append, ignore_index=True)
 
     if args.verbose:
         print("Followers DataFrame")

@@ -88,7 +88,7 @@ for profile in tqdm(profiles):
     try:
         user = api.get_user(name)._json
     except TweepError as te:
-        print(te[0]["message"])
+        print(te)
         continue
 
     user_l["main_label"] = label
@@ -131,14 +131,14 @@ for profile in tqdm(profiles):
         print("Getting Friends...", end='\r')
     for friend in tweepy.Cursor(api.friends, id=name).items():
         f = {}
-        f["name"] = follower._json["name"]
-        f["screen_name"] = follower._json["screen_name"]
-        f["location"] = follower._json["location"]
-        f["description"] = follower._json["description"]
-        f["is_locked"] = follower._json["protected"]
-        f["created_at"] = follower._json["created_at"]
-        f["is_verified"] = follower._json["verified"]
-        f["language"] = follower._json["lang"]
+        f["name"] = friend._json["name"]
+        f["screen_name"] = friend._json["screen_name"]
+        f["location"] = friend._json["location"]
+        f["description"] = friend._json["description"]
+        f["is_locked"] = friend._json["protected"]
+        f["created_at"] = friend._json["created_at"]
+        f["is_verified"] = friend._json["verified"]
+        f["language"] = friend._json["lang"]
         friends_l.append(f)
         if args.verbose:
             print("Current friend count: " + colored(len(friends_l),"yellow"), end='\r')
@@ -176,6 +176,7 @@ for profile in tqdm(profiles):
         print("Total number of friends collected: " + colored(len(friends_l), "yellow"))
         print("Total number of tweets collected: " + colored(len(tweets_l), "yellow"))
 
+    if args.csv:
         df_followers = pd.DataFrame(columns = user_l.keys())
         df_friends = pd.DataFrame(columns = user_l.keys())
         df_tweets = pd.DataFrame(columns = user_l.keys())
@@ -187,7 +188,7 @@ for profile in tqdm(profiles):
             df_friends = df_friends.append(dict_to_append, ignore_index=True)
         for i in range(len(tweets_l)):
             dict_to_append = dict(**user_l, **tweets_l[i])
-            df_tweets = df_friends.append(dict_to_append, ignore_index=True)
+            df_tweets = df_tweets.append(dict_to_append, ignore_index=True)
 
         if args.verbose:
             print("Followers DataFrame")
