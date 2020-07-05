@@ -58,8 +58,8 @@ if args.verbose:
     print("Getting user data...", end='\r')
 user = api.get_user(name)._json
 
-user_l["main_name"] = name
-user_l["main_screen_name"] = user["screen_name"]
+user_l["main_name"] = user["name"]
+user_l["main_screen_name"] = name
 user_l["main_location"] = user["location"]
 user_l["main_is_locked_account"] = user["protected"]
 user_l["main_created_at"] = user["created_at"]
@@ -117,7 +117,20 @@ if args.verbose:
     print("Getting user timeline...", end='\r')
 tweets_l = []
 for status in tweepy.Cursor(api.user_timeline, id=name, count = count).items():
-    tweets_l.append(status._json)
+    t = {}
+    t["created_at"] = status._json["created_at"]
+    t["text"] = status._json["text"]
+    t["hashtags"] = ",".join([ h.text for h in status._json["entities"]["hashtags"]])
+    t["symbols"] = status._json["entities"]["symbols"]
+    t["urls"] = status._json["entities"]["urls"]
+    t["is_retweet"] = status._json["retweeted"]
+    t["language"] = status._json["lang"]
+    t["name"] = status._json["user"]["name"]
+    t["screen_name"] = status._json["user"]["screen_name"]
+    t["is_quote"] = status._json["is_quote_status"]
+    t["is_reply"] = 0 if status._json["in_reply_to_status_id"] else status._json["in_reply_to_status_id"]
+    t["source"] = status._json["source"]
+    tweets_l.append(t)
     if args.verbose:
         print("Current tweet count: " + colored(len(tweets_l),"yellow"), end='\r')
 
@@ -143,20 +156,27 @@ if not args.csv:
     with open(args.dir + '/timeline_' + name+ '.json', 'w') as timelinejson:
         json.dump(tweets_l, timelinejson, indent=4)
 else:
-    df_followers = pd.DataFrame()
-    df_friends = pd.DataFrame()
+    df_followers = pd.DataFrame(columns = user_l.keys())
+    df_friends = pd.DataFrame(columns = user_l.keys())
+    df_tweets = pd.DataFrame(columns = user_l.keys())
     for i in range(len(followers_l)):
         dict_to_append = dict(**user_l, **followers_l[i])
         df_followers = df_followers.append(dict_to_append, ignore_index=True)
     for i in range(len(friends_l)):
         dict_to_append = dict(**user_l, **friends_l[i])
         df_friends = df_friends.append(dict_to_append, ignore_index=True)
-    
+    for i in range(len(tweets_l)):
+        dict_to_append = dict(**user_l, **tweets_l[i])
+        df_tweets = df_friends.append(dict_to_append, ignore_index=True)
+
     if args.verbose:
         print("Followers DataFrame")
         print(df_followers.head(5))
         print("Friends DataFrame")
         print(df_friends.head(5))
+        print("Tweets DataFrame")
+        print(df_tweets.head(5))
 
     df_followers.to_csv(args.dir + '/followers_' + name+ '.csv')
     df_friends.to_csv(args.dir + '/friends_' + name+ '.csv')
+    df_tweets.to_csv(args.dir + '/tweets_' + name+ '.csv')

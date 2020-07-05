@@ -23,6 +23,7 @@ parser.add_argument("-as", "--access_secret", metavar="asecret", nargs="?", help
 parser.add_argument("-d", "--dir", metavar="dir", nargs="?", help="Directory name to write outputs to", default='output')
 parser.add_argument("--csv", action='store_true', help="Format output in csv file")
 parser.add_argument("-v", "--verbose", action='store_true', help="Extra prints")
+parser.add_argument("--all", action='store_true', help="Concatenates different users dataframes to yield three csv files instead")
 args = parser.parse_args()
 
 if args.key is not None and args.secret is not None and args.atoken is not None and args.asecret is not None:
@@ -43,6 +44,14 @@ else:
 
 if args.csv:
     import pandas as pd
+
+if not os.path.exists(args.dir):
+        os.makedirs(args.dir)
+
+if args.all:
+    df_followers = pd.DataFrame(columns = user_l.keys())
+    df_friends = pd.DataFrame(columns = user_l.keys())
+    df_tweets = pd.DataFrame(columns = user_l.keys())
 
 # Auth with tweepy
 
@@ -76,11 +85,15 @@ for profile in tqdm(profiles):
 
     if args.verbose:
         print("Getting user data...", end='\r')
-    user = api.get_user(name)._json
+    try:
+        user = api.get_user(name)._json
+    except TweepError as te:
+        print(te[0]["message"])
+        continue
 
     user_l["main_label"] = label
-    user_l["main_name"] = name
-    user_l["main_screen_name"] = user["screen_name"]
+    user_l["main_name"] = user["name"]
+    user_l["main_screen_name"] = name
     user_l["main_location"] = user["location"]
     user_l["main_is_locked_account"] = user["protected"]
     user_l["main_created_at"] = user["created_at"]
@@ -139,7 +152,20 @@ for profile in tqdm(profiles):
         print("Getting user timeline...", end='\r')
     tweets_l = []
     for status in tweepy.Cursor(api.user_timeline, id=name, count = count).items():
-        tweets_l.append(status._json)
+        t = {}
+        t["created_at"] = status._json["created_at"]
+        t["text"] = status._json["text"]
+        t["hashtags"] = ",".join([ h.text for h in status._json["entities"]["hashtags"]])
+        t["symbols"] = status._json["entities"]["symbols"]
+        t["urls"] = status._json["entities"]["urls"]
+        t["is_retweet"] = status._json["retweeted"]
+        t["language"] = status._json["lang"]
+        t["name"] = status._json["user"]["name"]
+        t["screen_name"] = status._json["user"]["screen_name"]
+        t["is_quote"] = status._json["is_quote_status"]
+        t["is_reply"] = 0 if status._json["in_reply_to_status_id"] else status._json["in_reply_to_status_id"]
+        t["source"] = status._json["source"]
+        tweets_l.append(t)
         if args.verbose:
             print("Current tweet count: " + colored(len(tweets_l),"yellow"), end='\r')
 
@@ -150,10 +176,28 @@ for profile in tqdm(profiles):
         print("Total number of friends collected: " + colored(len(friends_l), "yellow"))
         print("Total number of tweets collected: " + colored(len(tweets_l), "yellow"))
 
-# Write Followers/Friends
+        df_followers = pd.DataFrame(columns = user_l.keys())
+        df_friends = pd.DataFrame(columns = user_l.keys())
+        df_tweets = pd.DataFrame(columns = user_l.keys())
+        for i in range(len(followers_l)):
+            dict_to_append = dict(**user_l, **followers_l[i])
+            df_followers = df_followers.append(dict_to_append, ignore_index=True)
+        for i in range(len(friends_l)):
+            dict_to_append = dict(**user_l, **friends_l[i])
+            df_friends = df_friends.append(dict_to_append, ignore_index=True)
+        for i in range(len(tweets_l)):
+            dict_to_append = dict(**user_l, **tweets_l[i])
+            df_tweets = df_friends.append(dict_to_append, ignore_index=True)
 
-    if not os.path.exists(args.dir):
-        os.makedirs(args.dir)
+        if args.verbose:
+            print("Followers DataFrame")
+            print(df_followers.head(5))
+            print("Friends DataFrame")
+            print(df_friends.head(5))
+            print("Tweets DataFrame")
+            print(df_tweets.head(5))
+
+    # Write Followers/Friends
 
     if not args.csv:
         with open(args.dir + '/followers_' + name + '.json', 'w') as followersjson:
@@ -164,21 +208,18 @@ for profile in tqdm(profiles):
 
         with open(args.dir + '/timeline_' + name+ '.json', 'w') as timelinejson:
             json.dump(tweets_l, timelinejson, indent=4)
-    else:
-        df_followers = pd.DataFrame()
-        df_friends = pd.DataFrame()
-        for i in range(len(followers_l)):
-            dict_to_append = dict(**user_l, **followers_l[i])
-            df_followers = df_followers.append(dict_to_append, ignore_index=True)
-        for i in range(len(friends_l)):
-            dict_to_append = dict(**user_l, **friends_l[i])
-            df_friends = df_friends.append(dict_to_append, ignore_index=True)
-    
-if args.verbose:
-    print("Followers DataFrame")
-    print(df_followers.head(5))
-    print("Friends DataFrame")
-    print(df_friends.head(5))
 
-df_followers.to_csv(args.dir + '/followers_' + name+ '.csv')
-df_friends.to_csv(args.dir + '/friends_' + name+ '.csv')
+    elif not args.all:
+        df_followers.to_csv(args.dir + '/followers_' + name+ '.csv')
+        df_friends.to_csv(args.dir + '/friends_' + name+ '.csv')
+        df_tweets.to_csv(args.dir + '/tweets_' + name+ '.csv')
+
+    else:
+        df_followers_all = pd.concat(df_followers_all, df_followers)
+        df_friends_all = pd.concat(df_friends_all, df_friends)
+        df_tweets_all = pd.concat(df_tweets_all, df_tweets)
+
+if args.all:
+    df_followers_all.to_csv(args.dir + '/followers_all.csv')
+    df_friends_all.to_csv(args.dir + '/friends_all.csv')
+    df_tweets_all.to_csv(args.dir + '/tweets_all.csv')
