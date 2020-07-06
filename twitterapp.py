@@ -2,12 +2,14 @@ import tweepy
 from tweepy import TweepError
 from termcolor import colored
 from colorama import init
+init()
+import sys
 
-class Twitter:
+class TwitterApp:
     def __init__(self, verbose, api_key, api_secret, api_access_token, api_access_token_secret):
         auth = tweepy.OAuthHandler(api_key, api_secret)
         auth.set_access_token(api_access_token, api_access_token_secret)
-        self.api = tweepy.API(auth, wait_on_rate_limit=True)
+        self.api = tweepy.API(auth,wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
         self.verbose = verbose
     def get_user(self, name, count):
         user_l = {}
@@ -16,8 +18,8 @@ class Twitter:
         try:
             user = self.api.get_user(name)._json
         except TweepError as te:
-            print(te)
-
+            sys.exit(colored(te,"red"))
+            
         user_l["main_name"] = user["name"]
         user_l["main_screen_name"] = name
         user_l["main_location"] = user["location"]
@@ -92,5 +94,5 @@ class Twitter:
             t["source"] = status._json["source"]
             tweets_l.append(t)
             if self.verbose:
-                print("Current tweet count: " + colored(len(tweets_l),"yellow"), end='\r')
+                print("Current tweets count: " + colored(len(tweets_l),"yellow"), end='\r')
         return tweets_l

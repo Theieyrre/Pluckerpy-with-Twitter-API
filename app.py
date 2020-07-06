@@ -6,7 +6,7 @@ from termcolor import colored
 from colorama import init
 init()
 
-from twitter import Twitter
+from twitterapp import TwitterApp
 
 # Parse arguments
 
@@ -47,7 +47,7 @@ if args.csv:
 
 # Get Twitter instance
 
-twitter = Twitter(args.verbose, api_key, api_secret, api_access_token, api_access_token_secret)
+twitter = TwitterApp(args.verbose, api_key, api_secret, api_access_token, api_access_token_secret)
 # Get profile data
 
 name = args.screen_name

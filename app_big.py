@@ -7,7 +7,7 @@ from colorama import init
 from tqdm import tqdm
 init()
 
-from twitter import Twitter
+from twitterapp import TwitterApp
 
 # Parse arguments
 
@@ -68,9 +68,10 @@ except FileNotFoundError:
     sys.exit(colored("File not Found!", "red"))
 
 for profile in tqdm(profiles):
-    twitter = Twitter(args.verbose, api_key, api_secret, api_access_token, api_access_token_secret)
+    twitter = TwitterApp(args.verbose, api_key, api_secret, api_access_token, api_access_token_secret)
     name = profile["name"]
     user, count = twitter.get_user(name, args.count)
+    user["label"] = profile["label"]
     followers = twitter.get_followers(name)
     friends = twitter.get_friends(name)
     tweets = twitter.get_tweets(name, count)
@@ -113,6 +114,9 @@ for profile in tqdm(profiles):
         df_tweets.to_csv(args.dir + '/tweets_' + name+ '.csv')
 
     else:
+        df_followers_all = pd.DataFrame(columns = user.keys())
+        df_friends_all = pd.DataFrame(columns = user.keys())
+        df_tweets_all = pd.DataFrame(columns = user.keys())
         df_followers_all = pd.concat(df_followers_all, df_followers)
         df_friends_all = pd.concat(df_friends_all, df_friends)
         df_tweets_all = pd.concat(df_tweets_all, df_tweets)
