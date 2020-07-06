@@ -54,7 +54,7 @@ Creates three files for each account:
 | Parameters   |      Description      |
 |----------|:-------------:|
 | file_name |  [REQUIRED] JSON file with JSON array including screen names |
-| count |  [OPTIONAL] Total amout of tweets to get from user timeline, default: 20 |
+| count |  [OPTIONAL] Total amout of tweets to get from user timeline, default: 199 |
 | -k, --key |  [OPTIONAL] Twitter API Key |
 | -s, --secret |  [OPTIONAL] Twitter API Secret |
 | -at, --access_token |  [OPTIONAL] Twitter Accesss Token |

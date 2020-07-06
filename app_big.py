@@ -17,7 +17,7 @@ parser = argparse.ArgumentParser(
     epilog="Example of usage:\npython profile.py name.json\n"
     )
 parser.add_argument("file_name", metavar="file_name", help="[REQUIRED] JSON file with JSON array including screen names")
-parser.add_argument("count", metavar="count", nargs="?", help="[OPTIONAL] Total amout of tweets to get from user timeline, default: 20", default=20)
+parser.add_argument("count", metavar="count", nargs="?", help="[OPTIONAL] Total amout of tweets to get from user timeline, default: 199", default=199)
 parser.add_argument("-k", "--key", metavar="key", nargs="?", help="Twitter API Key")
 parser.add_argument("-s", "--secret", metavar="secret", nargs="?", help="Twitter API Secret")
 parser.add_argument("-at", "--access_token", metavar="atoken", nargs="?", help="Twitter API Access Token")
@@ -117,9 +117,9 @@ for profile in tqdm(profiles):
         df_followers_all = pd.DataFrame(columns = user.keys())
         df_friends_all = pd.DataFrame(columns = user.keys())
         df_tweets_all = pd.DataFrame(columns = user.keys())
-        df_followers_all = pd.concat(df_followers_all, df_followers)
-        df_friends_all = pd.concat(df_friends_all, df_friends)
-        df_tweets_all = pd.concat(df_tweets_all, df_tweets)
+        df_followers_all = pd.concat([df_followers_all, df_followers])
+        df_friends_all = pd.concat([df_friends_all, df_friends])
+        df_tweets_all = pd.concat([df_tweets_all, df_tweets])
 
 if args.all:
     df_followers_all.to_csv(args.dir + '/followers_all.csv')
