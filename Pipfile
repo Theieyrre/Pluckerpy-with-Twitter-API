@@ -6,12 +6,12 @@ verify_ssl = true
 [dev-packages]
 
 [packages]
-tweepy = "*"
 termcolor = "*"
 colorama = "*"
 python-decouple = "*"
 pandas = "*"
 tqdm = "*"
+tweepy = "*"
 
 [requires]
 python_version = "3.8"

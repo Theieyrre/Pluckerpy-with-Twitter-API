@@ -6,6 +6,8 @@ from termcolor import colored
 from colorama import init
 init()
 
+from twitter import Twitter
+
 # Parse arguments
 
 parser = argparse.ArgumentParser(
@@ -28,7 +30,7 @@ if args.key is not None and args.secret is not None and args.atoken is not None 
     api_key = args.key
     api_secret = args.secret
     api_access_token = args.atoken
-    api_access_secret = args.asecret
+    api_access_token_secret = args.asecret
 elif args.key is None and args.secret is None:
     if os.path.exists('.env'):
         api_key = config('KEY')
@@ -43,96 +45,22 @@ else:
 if args.csv:
     import pandas as pd
 
-# Auth with tweepy
+# Get Twitter instance
 
-auth = tweepy.OAuthHandler(api_key, api_secret)
-auth.set_access_token(api_access_token, api_access_token_secret)
-api = tweepy.API(auth, wait_on_rate_limit=True)
-
+twitter = Twitter(args.verbose, api_key, api_secret, api_access_token, api_access_token_secret)
 # Get profile data
 
 name = args.screen_name
-user_l = {}
+user_l, count = twitter.get_user(name, args.count)
 
-if args.verbose:
-    print("Getting user data...", end='\r')
-user = api.get_user(name)._json
-
-user_l["main_name"] = user["name"]
-user_l["main_screen_name"] = name
-user_l["main_location"] = user["location"]
-user_l["main_is_locked_account"] = user["protected"]
-user_l["main_created_at"] = user["created_at"]
-user_l["main_is_verified"] = user["verified"]
-user_l["main_language"] = user["lang"]
-max_tweet = user["statuses_count"]
-
-count = max_tweet if args.count == '-1' else args.count
-if args.verbose:
-    print("Getting user data..." + colored("Done", "green"))
 # Get Followers/Friends
 
-followers_l = []
-friends_l = []
-
-if args.verbose:
-    print("Getting Followers...", end='\r')
-for follower in tweepy.Cursor(api.followers, id=name).items():
-    f = {}
-    f["name"] = follower._json["name"]
-    f["screen_name"] = follower._json["screen_name"]
-    f["location"] = follower._json["location"]
-    f["description"] = follower._json["description"]
-    f["is_locked"] = follower._json["protected"]
-    f["created_at"] = follower._json["created_at"]
-    f["is_verified"] = follower._json["verified"]
-    f["language"] = follower._json["lang"]
-    followers_l.append(f)
-    if args.verbose:
-        print("Current follower count: " + colored(len(followers_l),"yellow"), end='\r')
-if args.verbose:
-    print()
-    print("Getting user data..." + colored("Done", "green"))
-    print("Getting Friends...", end='\r')
-for friend in tweepy.Cursor(api.friends, id=name).items():
-    f = {}
-    f["name"] = friend._json["name"]
-    f["screen_name"] = friend._json["screen_name"]
-    f["location"] = friend._json["location"]
-    f["description"] = friend._json["description"]
-    f["is_locked"] = friend._json["protected"]
-    f["created_at"] = friend._json["created_at"]
-    f["is_verified"] = friend._json["verified"]
-    f["language"] = friend._json["lang"]
-    friends_l.append(f)
-    if args.verbose:
-        print("Current friend count: " + colored(len(friends_l),"yellow"), end='\r')
-if args.verbose:
-    print()
-    print("Getting Friends..." + colored("Done", "green"))
+followers_l = twitter.get_followers(name)
+friends_l = twitter.get_friends(name)
 
 # Get User Timeline
 
-if args.verbose:
-    print("Getting user timeline...", end='\r')
-tweets_l = []
-for status in tweepy.Cursor(api.user_timeline, id=name, count = count).items():
-    t = {}
-    t["created_at"] = status._json["created_at"]
-    t["text"] = status._json["text"]
-    t["hashtags"] = ",".join([ h["text"] for h in status._json["entities"]["hashtags"]])
-    t["symbols"] = status._json["entities"]["symbols"]
-    t["urls"] = ",".join([u["url"] for u in status._json["entities"]["urls"]])
-    t["is_retweet"] = status._json["retweeted"]
-    t["language"] = status._json["lang"]
-    t["name"] = status._json["user"]["name"]
-    t["screen_name"] = status._json["user"]["screen_name"]
-    t["is_quote"] = status._json["is_quote_status"]
-    t["is_reply"] = 0 if status._json["in_reply_to_status_id"] else status._json["in_reply_to_status_id"]
-    t["source"] = status._json["source"]
-    tweets_l.append(t)
-    if args.verbose:
-        print("Current tweet count: " + colored(len(tweets_l),"yellow"), end='\r')
+tweets_l = twitter.get_tweets(name, count)
 
 if args.verbose:
     print()
