@@ -71,10 +71,14 @@ for profile in tqdm(profiles):
     twitter = TwitterApp(args.verbose, api_key, api_secret, api_access_token, api_access_token_secret)
     name = profile["name"]
     user, count = twitter.get_user(name, args.count)
+    print(twitter.get_rate_limit_status("users"))
     user["label"] = profile["label"]
     followers = twitter.get_followers(name)
+    print(twitter.get_rate_limit_status("followers"))
     friends = twitter.get_friends(name)
+    print(twitter.get_rate_limit_status("friends"))
     tweets = twitter.get_tweets(name, count)
+    print(twitter.get_rate_limit_status("tweets"))
 
     if args.csv:
         df_followers = pd.DataFrame(columns = user.keys())

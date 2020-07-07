@@ -96,3 +96,12 @@ class TwitterApp:
             if self.verbose:
                 print("Current tweets count: " + colored(len(tweets_l),"yellow"), end='\r')
         return tweets_l
+    def get_rate_limit_status(self, category):
+        if category == "users":
+            return self.api.rate_limit_status()["resources"]["users"]['/users/show/:id']
+        elif category == "friends":
+            return self.api.rate_limit_status()["resources"]["friends"]['/friends/list']
+        elif category == "followers":
+            return self.api.rate_limit_status()["resources"]["followers"]['/followers/list']
+        elif category == "tweets":
+            return self.api.rate_limit_status()["resources"]["statuses"]['/statuses/user_timeline']
