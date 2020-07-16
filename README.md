@@ -66,3 +66,23 @@ Creates three files for each account:
 
 Access Token and Access Secret are necessary to run application with an authorized twitter account and callback action  
 Optional parameters or .env file is necessary to run. Either one of them is enough 
+
+To run application with list of names
+```python
+python location.py |Folder name of JSON Accounts|
+```
+
+Creates three files for each account:
+>|Folder name|.csv accounts with locations
+
+| Parameters   |      Description      |
+|----------|:-------------:|
+| folder |  [REQUIRED] Folder name of accounts |
+| -k, --key |  [OPTIONAL] Twitter API Key |
+| -s, --secret |  [OPTIONAL] Twitter API Secret |
+| -at, --access_token |  [OPTIONAL] Twitter Accesss Token |
+| -as, --access_secret |  [OPTIONAL] Twitter Accesss Secret |
+| -v, --verbose |  Extra prints |
+
+Access Token and Access Secret are necessary to run application with an authorized twitter account and callback action  
+Optional parameters or .env file is necessary to run. Either one of them is enough 

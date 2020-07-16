@@ -96,6 +96,12 @@ class TwitterApp:
             if self.verbose:
                 print("Current tweets count: " + colored(len(tweets_l),"yellow"), end='\r')
         return tweets_l
+    def get_location(self, name):
+        try:
+            user = self.api.get_user(name)
+            return user._json['location']
+        except TweepError as te:
+            print(colored(te.args[0][0]['message'],"red"))
     def get_rate_limit_status(self, category):
         if category == "users":
             return self.api.rate_limit_status()["resources"]["users"]['/users/show/:id']
