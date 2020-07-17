@@ -50,6 +50,7 @@ df = pd.DataFrame(columns=columns)
 
 if args.verbose:
     print("Reading files...", end='\r')
+
 for file in os.listdir(args.folder):
     filename = os.path.join(args.folder, file)
     with open(filename) as f:
@@ -60,15 +61,21 @@ for file in os.listdir(args.folder):
             data_dict[i] = follower
             i += 1
     df = pd.DataFrame.from_dict(data_dict, "index")
+
 if args.verbose:
     print("Reading files..." + colored("Done", "green"))
 
 df.to_csv(args.folder + ".csv")
+
 if args.verbose:
     print(colored("Accounts.csv is created", "green"))
     print("Getting locations...")
+
 # Get Locations
 
 df["location"] = df["name"].apply(twitter.get_location)
+
 if args.verbose:
     print("Getting locations..." + colored("Done", "green"))
+    
+df.to_csv(args.folder + "_with_locations.csv")
