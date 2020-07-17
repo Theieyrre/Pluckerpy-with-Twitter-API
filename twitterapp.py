@@ -3,7 +3,7 @@ from tweepy import TweepError
 from termcolor import colored
 from colorama import init
 init()
-import sys
+import sys, time
 
 class TwitterApp:
     def __init__(self, verbose, api_key, api_secret, api_access_token, api_access_token_secret):
@@ -11,6 +11,7 @@ class TwitterApp:
         auth.set_access_token(api_access_token, api_access_token_secret)
         self.api = tweepy.API(auth,wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
         self.verbose = verbose
+        self.count = 0
     def get_user(self, name, count):
         user_l = {}
         if self.verbose:
@@ -97,11 +98,17 @@ class TwitterApp:
                 print("Current tweets count: " + colored(len(tweets_l),"yellow"), end='\r')
         return tweets_l
     def get_location(self, name):
-        try:
-            user = self.api.get_user(name)
-            return user._json['location']
-        except TweepError as te:
-            print(colored(te.args[0][0]['message'],"red"))
+        if self.count < 900:
+            try:
+                user = self.api.get_user(name)
+                self.count += 1
+                return user._json['location']
+            except TweepError as te:
+                print(colored(te.args[0][0]['message'],"red"))
+        else:
+            # print(self.get_rate_limit_status("location")["remaining"])
+            time.sleep(15 * 60)
+            self.count = 0
     def get_rate_limit_status(self, category):
         if category == "users":
             return self.api.rate_limit_status()["resources"]["users"]['/users/show/:id']
@@ -111,3 +118,7 @@ class TwitterApp:
             return self.api.rate_limit_status()["resources"]["followers"]['/followers/list']
         elif category == "tweets":
             return self.api.rate_limit_status()["resources"]["statuses"]['/statuses/user_timeline']
+        elif category == "location":
+            return self.api.rate_limit_status()["resources"]["users"]['/users/:id']
+        else:
+            return self.api.rate_limit_status()
