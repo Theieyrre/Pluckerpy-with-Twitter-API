@@ -45,8 +45,9 @@ twitter = TwitterApp(args.verbose, api_key, api_secret, api_access_token, api_ac
 
 # LOOP
 
-columns= ['screen_name', 'name', 'name_emojis', 'is_verified', 'is_locked', 'bio', 'bio_emojis', 'links', 'location']
+columns= ['screen_name', 'name', 'name_emojis', 'is_verified', 'is_locked', 'bio', 'bio_emojis', 'links']
 df = pd.DataFrame(columns=columns)
+df_append = pd.DataFrame(columns=columns)
 
 if args.verbose:
     print("Reading files...", end='\r')
@@ -60,7 +61,8 @@ for file in os.listdir(args.folder):
         for follower in data.values():
             data_dict[i] = follower
             i += 1
-    df = pd.DataFrame.from_dict(data_dict, "index")
+    df_append = pd.DataFrame.from_dict(data_dict, "index")
+    df = df.append(df_append)
 
 if args.verbose:
     print("Reading files..." + colored("Done", "green"))
@@ -73,9 +75,23 @@ if args.verbose:
 
 # Get Locations
 
-df["location"] = df["name"].apply(twitter.get_location)
+count = 0
+def get_location(text):
+    global count
+    location = twitter.get_location(text)
+    if location is not None:
+        count += 1
+        if args.verbose:
+            print(str(count) + " " + location, end='\r')
+    return location
+
+#df_10k = df.head(10000)
+#df_10k["location"] = df_10k["name"].apply(get_location)
+#df_10k.to_csv("10k_accounts.csv")
+count = 0
+df["location"] = df["name"].apply(get_location)
 
 if args.verbose:
     print("Getting locations..." + colored("Done", "green"))
-    
+
 df.to_csv(args.folder + "_with_locations.csv")

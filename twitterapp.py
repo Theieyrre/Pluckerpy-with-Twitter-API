@@ -7,9 +7,9 @@ import sys, time
 
 class TwitterApp:
     def __init__(self, verbose, api_key, api_secret, api_access_token, api_access_token_secret):
-        auth = tweepy.OAuthHandler(api_key, api_secret)
-        auth.set_access_token(api_access_token, api_access_token_secret)
-        self.api = tweepy.API(auth,wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
+        self.auth = tweepy.OAuthHandler(api_key, api_secret)
+        self.auth.set_access_token(api_access_token, api_access_token_secret)
+        self.api = tweepy.API(self.auth,wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
         self.verbose = verbose
         self.count = 0
     def get_user(self, name, count):
@@ -98,17 +98,14 @@ class TwitterApp:
                 print("Current tweets count: " + colored(len(tweets_l),"yellow"), end='\r')
         return tweets_l
     def get_location(self, name):
-        if self.count < 900:
-            try:
-                user = self.api.get_user(name)
-                self.count += 1
-                return user._json['location']
-            except TweepError as te:
-                print(colored(te.args[0][0]['message'],"red"))
-        else:
-            # print(self.get_rate_limit_status("location")["remaining"])
-            time.sleep(15 * 60)
-            self.count = 0
+        try:
+            user = self.api.get_user(name)
+            self.count += 1
+            time.sleep(1)
+            return user._json['location']
+        except TweepError as te:
+            print(colored(te.args[0][0]['message'],"red"))
+            return "<ERROR>"
     def get_rate_limit_status(self, category):
         if category == "users":
             return self.api.rate_limit_status()["resources"]["users"]['/users/show/:id']
